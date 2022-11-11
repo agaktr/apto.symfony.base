@@ -1,5 +1,5 @@
 {% if collection.total > 0 %}
-{% set currentPage = app.request.get('_page')|default(1) %}
+{% set currentPage = form.get('page')|default(1) %}
 {% set pages = (collection.total / collection.perPage)|round(0,'ceil') %}
 {% set pagesInRange= range(1,pages) %}
 {% set pagesInRange= pagesInRange|slice(max(0, currentPage - 3),5) %}

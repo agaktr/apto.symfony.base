@@ -3,8 +3,11 @@
 namespace App\Repository;
 
 use App\Entity\Boilerplate;
+use App\Traits\EntityRepositoryTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
 
 /**
  * @extends ServiceEntityRepository<Boilerplate>
@@ -16,6 +19,9 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class BoilerplateRepository extends ServiceEntityRepository
 {
+
+    use EntityRepositoryTrait;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Boilerplate::class);
@@ -38,6 +44,7 @@ class BoilerplateRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
 
 //    /**
 //     * @return Boilerplate[] Returns an array of Boilerplate objects

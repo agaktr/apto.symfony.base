@@ -3,7 +3,6 @@
 namespace App\Controller\Apto;
 
 use App\Entity\Apto\User;
-use App\Entity\Apto\UserSettings;
 use App\Form\Apto\RegistrationFormType;
 use App\Security\Apto\EmailVerifier;
 use App\Security\Apto\SecurityAuthenticator;
@@ -98,26 +97,7 @@ class SecurityController extends AptoAbstractController
                 );
 
 
-                //create user settings
-                $userSettings = new UserSettings();
-                $userSettings->setUser($user);
-                $userSettings->setEmail($form->getExtraData()['email']);
-
-                $errors = $validator->validate($userSettings);
-                foreach ($errors as $error) {
-                    $this->addFlash('error', $error->getMessage());
-                }
-
-                if (count($errors) > 0) {
-
-                    throw new Exception('User settings validation error');
-                }
-
                 $entityManager->persist($user);
-                $entityManager->persist($userSettings);
-
-                //attach user settings to user
-                $user->setUserSettings($userSettings);
 
                 $entityManager->flush();
 
@@ -128,7 +108,7 @@ class SecurityController extends AptoAbstractController
                     $emailVerifier->sendEmailConfirmation('app_verify_email' , $user ,
                         (new TemplatedEmail())
                             ->from(new Address('info@symfony.blackflag.cloud' , 'Blackflag'))
-                            ->to($userSettings->getEmail())
+                            ->to($user->getEmail())
                             ->subject($translator->trans('Please Confirm your Email',[],'register'))
                             ->htmlTemplate('theme/security/confirmation_email.html.twig')
                     );
@@ -136,7 +116,6 @@ class SecurityController extends AptoAbstractController
 
                     //delete user
                     $entityManager->remove($user);
-                    $entityManager->remove($userSettings);
                     $entityManager->flush();
 
                     //add flash message and redirect to register

@@ -2,8 +2,9 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Apto\Notification;
 use App\Entity\Apto\User;
-use App\Entity\Apto\UserSettings;
+use DateTime;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -15,6 +16,7 @@ class AppFixtures extends Fixture
     public const SUPER_USER_REFERENCE = 'super-user';
     public const ADMIN_USER_REFERENCE = 'admin-user';
     public const USER_REFERENCE = 'user';
+    public const NOTIFICATION_REFERENCE = 'norification';
 
     public function __construct(UserPasswordHasherInterface $hasher)
     {
@@ -24,24 +26,17 @@ class AppFixtures extends Fixture
     public function load(ObjectManager $manager)
     {
         //create a new super admin fixture
-        $suserAdmin = new User();
-        $suserAdmin->setUsername('super');
-        $password = $this->hasher->hashPassword($suserAdmin, 'apassword28');
-        $suserAdmin->setPassword($password);
-        $suserAdmin->setIsVerified(true);
-        $suserAdmin->setRoles(['ROLE_SUPER_ADMIN']);
+        $superAdmin = new User();
+        $superAdmin->setUsername('super');
+        $password = $this->hasher->hashPassword($superAdmin, 'apassword28');
+        $superAdmin->setPassword($password);
+        $superAdmin->setIsVerified(true);
+        $superAdmin->setRoles(['ROLE_SUPER_ADMIN']);
+        $superAdmin->setEmail('super@admin.com');
+        $superAdmin->setCreated(new DateTime());
+        $superAdmin->setUpdated(new DateTime());
 
-        $manager->persist($suserAdmin);
-
-        //create a new super settings fixture
-        $superSettings = new UserSettings();
-        $superSettings->setUser($suserAdmin);
-        $superSettings->setFirstName('Super');
-        $superSettings->setLastName('Admin');
-        $superSettings->setTel('555-555-5555');
-        $superSettings->setEmail('super@admin.com');
-
-        $manager->persist($superSettings);
+        $manager->persist($superAdmin);
 
         //create a new admin fixture
         $userAdmin = new User();
@@ -50,18 +45,11 @@ class AppFixtures extends Fixture
         $userAdmin->setPassword($password);
         $userAdmin->setIsVerified(true);
         $userAdmin->setRoles(['ROLE_ADMIN']);
+        $userAdmin->setEmail('admin@admin.com');
+        $userAdmin->setCreated(new DateTime());
+        $userAdmin->setUpdated(new DateTime());
 
         $manager->persist($userAdmin);
-
-        //create a new admin settings fixture
-        $adminSettings = new UserSettings();
-        $adminSettings->setUser($userAdmin);
-        $adminSettings->setFirstName('Admin');
-        $adminSettings->setLastName('Admin');
-        $adminSettings->setTel('555-555-5555');
-        $adminSettings->setEmail('admin@admin.com');
-
-        $manager->persist($adminSettings);
 
         //create a new user fixture
         $user = new User();
@@ -69,25 +57,29 @@ class AppFixtures extends Fixture
         $password = $this->hasher->hashPassword($user, 'apassword28');
         $user->setPassword($password);
         $user->setIsVerified(true);
+        $user->setEmail('user@user.com');
+        $user->setCreated(new DateTime());
+        $user->setUpdated(new DateTime());
 
         $manager->persist($user);
 
-        //create a new user settings fixture
-        $userSettings = new UserSettings();
-        $userSettings->setUser($user);
-        $userSettings->setFirstName('User');
-        $userSettings->setLastName('User');
-        $userSettings->setTel('555-555-5555');
-        $userSettings->setEmail('user@user.com');
+        //create a new notification fixture
+        $notification = new Notification();
+        $notification->setName('Test Notification');
+        $notification->setContent('Test Content Notification');
+        $notification->addUser($user);
+        $notification->addUser($userAdmin);
+        $notification->addUser($superAdmin);
 
-        $manager->persist($userSettings);
+        $manager->persist($notification);
 
         //save the fixtures
         $manager->flush();
 
         // other fixtures can get this object using the UserFixtures::{TheReference} constant
-        $this->addReference(self::SUPER_USER_REFERENCE, $suserAdmin);
+        $this->addReference(self::SUPER_USER_REFERENCE, $superAdmin);
         $this->addReference(self::ADMIN_USER_REFERENCE, $userAdmin);
         $this->addReference(self::USER_REFERENCE, $user);
+        $this->addReference(self::NOTIFICATION_REFERENCE, $notification);
     }
 }

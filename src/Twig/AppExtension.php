@@ -23,7 +23,9 @@ class AppExtension extends AbstractExtension implements GlobalsInterface
             new TwigFunction('pagination', [AppRuntime::class, 'pagination'],[
                 'is_safe' => ['html'],
             ]),
-            new TwigFunction('compress', [AppRuntime::class, 'compress']),
+            new TwigFunction('filters', [AppRuntime::class, 'filters'],[
+                'is_safe' => ['html'],
+            ]),
         ];
     }
 

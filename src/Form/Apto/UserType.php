@@ -6,6 +6,7 @@ use App\Entity\Apto\User;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -17,6 +18,7 @@ class UserType extends AbstractType
     {
         $builder
             ->add('username')
+            ->add('email',EmailType::class)
             ->add('roles', ChoiceType::class, [
                 'required' => true,
                 'multiple' => true,
@@ -34,9 +36,6 @@ class UserType extends AbstractType
             ->add('isVerified', CheckboxType::class, [
                 'required' => false,
             ])
-            ->add('userSettings', UserSettingsType::class, [
-
-            ])
             ->add('save', SubmitType::class, [
                 'label' => 'Save',
             ])
@@ -47,7 +46,6 @@ class UserType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => User::class,
-            'allow_extra_fields' => true,
         ]);
     }
 }

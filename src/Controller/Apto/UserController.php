@@ -3,8 +3,10 @@
 namespace App\Controller\Apto;
 
 use App\Entity\Apto\User;
+use App\Form\Apto\UserFilterType;
 use App\Form\Apto\UserType;
 use App\Repository\Apto\UserRepository;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Form\FormError;
@@ -12,6 +14,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
@@ -26,20 +30,32 @@ class UserController extends AptoAbstractController
     public function index(Request $request,UserRepository $userRepository): Response
     {
 
-        $currentPage = $request->get('_page', 1);
+        $filterType = 'App\Form\Apto\\'.ucfirst($this->entityName).'FilterType';
+        $form = $this->createForm(get_class(new $filterType));
+
+        $form->handleRequest($request);
+
+        $criteria = $form->getData() ?? [];
+        $currentPage = $criteria['page'] ?? 1;
+        $orderBy = [
+            !empty($criteria['sortBy']) ? $criteria['sortBy'] : 'id',
+            !empty($criteria['sort']) ? $criteria['sort'] : 'ASC'
+        ];
+        unset($criteria['sortBy'],$criteria['sort'],$criteria['page']);
+
         $offset = ($currentPage - 1) * self::PER_PAGE;
 
-        $total = $userRepository->count([]);
-        $users = $userRepository->findBy([],[],self::PER_PAGE,$offset);
+        $total = ${$this->entityName.'Repository'}->count($criteria);
+        $entities = ${$this->entityName.'Repository'}->findBy($criteria,$orderBy,self::PER_PAGE,$offset);
 
-        return $this->render('theme/user/index.html.twig', [
-            'users' =>
-                [
-                    'items'=>$users,
-                    'total' => $total,
-                    'perPage' => self::PER_PAGE,
-                    'offset' => $offset,
-                ],
+        return $this->renderForm('theme/'.$this->entityName.'/index.html.twig', [
+            'entities' => [
+                'items'=>$entities,
+                'total' => $total,
+                'perPage' => self::PER_PAGE,
+                'offset' => $offset,
+            ],
+            'form' => $form,
         ]);
     }
 
@@ -56,9 +72,6 @@ class UserController extends AptoAbstractController
         $errors = [$form->getErrors(true)];
 
         if ($request->isMethod('POST')) {
-
-            $userSettings = $user->getUserSettings();
-            $errors[] = $validator->validate($userSettings);
 
             if (null == $form->get('plainPassword')->getData()) {
                 $errors[] = [new FormError('Please enter a password')];
@@ -84,6 +97,9 @@ class UserController extends AptoAbstractController
                         $form->get('plainPassword')->getData()
                     )
                 );
+
+                $user->setCreated(new DateTime());
+                $user->setUpdated(new DateTime());
 
                 $userRepository->add($user, true);
                 $this->addFlash('success', 'User created');
@@ -123,9 +139,6 @@ class UserController extends AptoAbstractController
 
         if ($request->isMethod('POST')) {
 
-            $userSettings = $user->getUserSettings();
-            $errors[] = $validator->validate($userSettings);
-
             $errorCount = 0;
             foreach ($errors as $errorIterator) {
                 foreach ($errorIterator as $error) {
@@ -150,8 +163,12 @@ class UserController extends AptoAbstractController
                     );
                 }
 
+                $user->setUpdated(new DateTime());
+
                 $userRepository->add($user, true);
                 $this->addFlash('success', 'User updated');
+
+                return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
             }
         }
 
@@ -168,6 +185,8 @@ class UserController extends AptoAbstractController
     {
         if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->request->get('_token'))) {
             $userRepository->remove($user, true);
+
+            $this->cache->flushdb();
         }
 
         return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);

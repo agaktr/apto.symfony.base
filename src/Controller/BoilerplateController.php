@@ -23,21 +23,32 @@ class BoilerplateController extends AptoAbstractController
     public function index(Request $request,BoilerplateRepository $boilerplateRepository): Response
     {
 
-        $currentPage = $request->get('_page', 1);
+        $filterType = 'App\Form\\'.ucfirst($this->entityName).'FilterType';
+        $form = $this->createForm(get_class(new $filterType));
+
+        $form->handleRequest($request);
+
+        $criteria = $form->getData() ?? [];
+        $currentPage = $criteria['page'] ?? 1;
+        $orderBy = [
+            !empty($criteria['sortBy']) ? $criteria['sortBy'] : 'id',
+            !empty($criteria['sort']) ? $criteria['sort'] : 'ASC'
+        ];
+        unset($criteria['sortBy'],$criteria['sort'],$criteria['page']);
+
         $offset = ($currentPage - 1) * self::PER_PAGE;
 
-        $filters = $request->get('filters',[]);
+        $total = ${$this->entityName.'Repository'}->count($criteria);
+        $entities = ${$this->entityName.'Repository'}->findBy($criteria,$orderBy,self::PER_PAGE,$offset);
 
-        $total = ${$this->entityName.'Repository'}->count($filters);
-        $entities = ${$this->entityName.'Repository'}->findBy($filters,[],self::PER_PAGE,$offset);
-
-        return $this->render($this->entityName.'/index.html.twig', [
+        return $this->renderForm($this->entityName.'/index.html.twig', [
             'entities' => [
                 'items'=>$entities,
                 'total' => $total,
                 'perPage' => self::PER_PAGE,
                 'offset' => $offset,
             ],
+            'form' => $form,
         ]);
     }
 
@@ -101,6 +112,8 @@ class BoilerplateController extends AptoAbstractController
     {
         if ($this->isCsrfTokenValid('delete'.$boilerplate->getId(), $request->request->get('_token'))) {
             $boilerplateRepository->remove($boilerplate, true);
+
+            $this->cache->flushdb();
         }
 
         return $this->redirectToRoute('app_boilerplate_index', [], Response::HTTP_SEE_OTHER);

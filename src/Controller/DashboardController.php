@@ -62,25 +62,7 @@ class DashboardController extends AptoAbstractController
                         )
                     );
                 }
-
-
-                //user settings
-                $userSettings = $this->getUser()->getUserSettings();
-
-                $userSettings->setEmail($request->get('email'));
-                $userSettings->setFirstName($request->get('firstName'));
-                $userSettings->setLastName($request->get('lastName'));
-                $userSettings->setTel($request->get('tel'));
-
-                $errors = $validator->validate($userSettings);
-                foreach ($errors as $error) {
-                    $this->addFlash('error', $error->getMessage());
-                }
-
-                if (count($errors) > 0) {
-
-                    throw new Exception('User settings validation error');
-                }
+                $user->setEmail($request->get('email'));
 
                 $entityManager->flush();
 

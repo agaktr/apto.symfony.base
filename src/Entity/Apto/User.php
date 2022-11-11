@@ -15,6 +15,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
  * @UniqueEntity(fields={"username"}, message="There is already an account with this username")
+ * @UniqueEntity(fields={"email"}, message="There is already an account with this email")
  * @Cache(usage="NONSTRICT_READ_WRITE", region="region")
  */
 class User implements UserInterface, PasswordAuthenticatedUserInterface
@@ -48,10 +49,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private $isVerified = false;
 
     /**
-     * @ORM\OneToOne(targetEntity=UserSettings::class, mappedBy="user", cascade={"persist", "remove"})
-     * @Cache(usage="NONSTRICT_READ_WRITE", region="region")
+     * @ORM\Column(type="string", length=180, unique=true)
      */
-    private $userSettings;
+    private $email;
 
     /**
      * @ORM\ManyToMany(targetEntity=Notification::class, mappedBy="users")
@@ -70,6 +70,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @Cache(usage="NONSTRICT_READ_WRITE", region="region")
      */
     private $boilerplates;
+
+    /**
+     * @ORM\Column(type="datetime")
+     */
+    private $created;
+
+    /**
+     * @ORM\Column(type="datetime")
+     */
+    private $updated;
 
     public function __construct()
     {
@@ -189,19 +199,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getUserSettings(): ?UserSettings
+    public function getEmail(): ?string
     {
-        return $this->userSettings;
+        return $this->email;
     }
 
-    public function setUserSettings(UserSettings $userSettings): self
+    public function setEmail(string $email): self
     {
-        // set the owning side of the relation if necessary
-        if ($userSettings->getUser() !== $this) {
-            $userSettings->setUser($this);
-        }
-
-        $this->userSettings = $userSettings;
+        $this->email = $email;
 
         return $this;
     }
@@ -286,6 +291,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $boilerplate->setUser(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getCreated(): ?\DateTimeInterface
+    {
+        return $this->created;
+    }
+
+    public function setCreated(\DateTimeInterface $created): self
+    {
+        $this->created = $created;
+
+        return $this;
+    }
+
+    public function getUpdated(): ?\DateTimeInterface
+    {
+        return $this->updated;
+    }
+
+    public function setUpdated(\DateTimeInterface $updated): self
+    {
+        $this->updated = $updated;
 
         return $this;
     }

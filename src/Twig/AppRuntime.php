@@ -10,12 +10,10 @@ class AppRuntime implements RuntimeExtensionInterface
 {
 
     private Environment $twig;
-    private string $environment;
 
-    public function __construct(Environment $twig,string $environment)
+    public function __construct(Environment $twig)
     {
         $this->twig = $twig;
-        $this->environment = $environment;
     }
 
     public function extractEntityNameByPath(string $name): string
@@ -32,9 +30,11 @@ class AppRuntime implements RuntimeExtensionInterface
         ]);
     }
 
-    public function compress($content): string
+    public function filters($form): string
     {
 
-        return 'test';
+        return $this->twig->render('theme/filters/filters.html.twig', [
+            'form' => $form,
+        ]);
     }
 }

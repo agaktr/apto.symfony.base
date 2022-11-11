@@ -3,24 +3,30 @@
 namespace App\Form;
 
 use App\Entity\Apto\User;
-use App\Entity\Boilerplate;
 use App\Repository\Apto\UserRepository;
 use Doctrine\ORM\Cache;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class BoilerplateType extends AbstractType
+class BoilerplateFilterType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('Column1')
-            ->add('Column2')
+            ->setMethod('GET')
+            ->add('Column1',null,[
+                'required' => false,
+            ])
+            ->add('Column2',null,[
+                'required' => false,
+            ])
             ->add('user',EntityType::class,[
                 'class' => User::class,
+                'required' => false,
                 'query_builder' => function (UserRepository $er) {
                     return $er->createQueryBuilder('u')
                         ->setCacheable(true)
@@ -28,8 +34,25 @@ class BoilerplateType extends AbstractType
                         ->setCacheRegion('region');
                 },
             ])
-            ->add('save', SubmitType::class, [
-                'label' => 'Save',
+            ->add('sortBy', ChoiceType::class, [
+                'required' => false,
+                'choices'  => [
+                    'Sort By' => '',
+                    'id' => 'ID',
+                    'Username' => 'username',
+                    'Email' => 'email',
+                ],
+            ])
+            ->add('sort', ChoiceType::class, [
+                'required' => false,
+                'choices'  => [
+                    'Sort' => '',
+                    'ASC' => 'ASC',
+                    'DESC' => 'DESC',
+                ],
+            ])
+            ->add('search', SubmitType::class, [
+                'label' => 'search',
             ])
         ;
     }
@@ -37,7 +60,6 @@ class BoilerplateType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => Boilerplate::class,
         ]);
     }
 }

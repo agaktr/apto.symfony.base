@@ -3,9 +3,12 @@
 namespace App\Repository\Apto;
 
 use App\Entity\Apto\User;
-use App\Entity\Apto\UserSettings;
+use App\Traits\EntityRepositoryTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
+use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
@@ -20,6 +23,9 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
  */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
+
+    use EntityRepositoryTrait;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, User::class);
@@ -60,11 +66,11 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     public function findByEmailOrUsername(string $userIdentifier)
     {
         return $this->createQueryBuilder('u')
-            ->innerJoin(UserSettings::class, 'us','WITH', 'u.id = us.user')
-            ->where('us.email = :emailOrUsername')
+            ->where('u.email = :emailOrUsername')
             ->orWhere('u.username = :emailOrUsername')
             ->setParameter('emailOrUsername', $userIdentifier)
             ->getQuery()
+            ->setResultCache(new RedisAdapter(new Client()))
             ->getOneOrNullResult();
     }
 }

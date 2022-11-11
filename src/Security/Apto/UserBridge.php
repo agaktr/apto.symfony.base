@@ -3,7 +3,6 @@
 namespace App\Security\Apto;
 
 use App\Entity\Apto\User;
-use App\Entity\Apto\UserSettings;
 use App\Repository\Apto\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping as ORM;
@@ -56,20 +55,15 @@ class UserBridge implements OAuthAwareUserProviderInterface
                 )
             );
 
-            $userSettings = new UserSettings();
-            $userSettings->setUser($user);
-            $userSettings->setFirstName($response->getFirstName());
-            $userSettings->setLastName($response->getLastName());
-            $userSettings->setEmail($response->getEmail());
+            $user->setEmail($response->getEmail());
 
             $this->em->persist($user);
-            $this->em->persist($userSettings);
             $this->em->flush();
 
             //send social email
             $email = (new TemplatedEmail())
                 ->from('info@wedmyway.gr')
-                ->to(new Address($userSettings->getEmail()))
+                ->to(new Address($user->getEmail()))
                 ->subject('Thanks for signing up!')
 
                 // path of the Twig template to render

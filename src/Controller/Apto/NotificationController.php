@@ -124,6 +124,8 @@ class NotificationController extends AptoAbstractController
     {
         if ($this->isCsrfTokenValid('delete'.$notification->getId(), $request->request->get('_token'))) {
             $notificationRepository->remove($notification, true);
+
+            $this->cache->flushdb();
         }
 
         return $this->redirectToRoute('app_notification_index', [], Response::HTTP_SEE_OTHER);
