@@ -7,7 +7,9 @@ use App\Interfaces\AppInterface;
 use App\Service\AppService;
 use Predis\Client;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -17,14 +19,21 @@ use Symfony\Component\Serializer\Serializer;
 class AptoAbstractController extends AbstractController implements AppInterface
 {
 
-    public Client $cache;
-    public AppService $appService;
-    public bool $isApi;
-    public string $environment;
-    public string $entityName;
+    protected Client $cache;
+    protected AppService $appService;
+    protected FormInterface $filterForm;
+    protected bool $isApi;
+    protected string $environment;
+    protected string $entityName;
+    protected array $criteria;
+    protected array $orderBy;
+    protected int $currentPage;
+    protected int $offset;
+
 
     /**
      * basic variables we use on all controllers
+     * @param AppService $appService
      * @param Client $client
      * @param string $environment
      */
@@ -63,7 +72,33 @@ class AptoAbstractController extends AbstractController implements AppInterface
                 )
             )
         );
+    }
 
+    protected function handleFilterForm(Request $request){
+
+        $filterType = 'App\Form\\'.ucfirst($this->entityName).'FilterType';
+        $form = $this->createForm(get_class(new $filterType));
+
+        $form->handleRequest($request);
+
+        $criteria = $form->getData() ?? [];
+        $currentPage = $criteria['page'] ?? 1;
+        $orderBy = [
+            isset($criteria['sortBy']) && !empty($criteria['sortBy'])
+                ? $criteria['sortBy']
+                : 'id',
+            isset($criteria['sort']) && !empty($criteria['sort'])
+                ? $criteria['sort']
+                : 'ASC'
+        ];
+        unset($criteria['sortBy'],$criteria['sort'],$criteria['page']);
+
+        $offset = ($currentPage - 1) * self::PER_PAGE;
+
+        $this->criteria = $criteria;
+        $this->orderBy = $orderBy;
+        $this->offset = $offset;
+        $this->filterForm = $form;
     }
 
     /**

@@ -23,32 +23,19 @@ class BoilerplateController extends AptoAbstractController
     public function index(Request $request,BoilerplateRepository $boilerplateRepository): Response
     {
 
-        $filterType = 'App\Form\\'.ucfirst($this->entityName).'FilterType';
-        $form = $this->createForm(get_class(new $filterType));
+        $this->handleFilterForm($request);
 
-        $form->handleRequest($request);
-
-        $criteria = $form->getData() ?? [];
-        $currentPage = $criteria['page'] ?? 1;
-        $orderBy = [
-            !empty($criteria['sortBy']) ? $criteria['sortBy'] : 'id',
-            !empty($criteria['sort']) ? $criteria['sort'] : 'ASC'
-        ];
-        unset($criteria['sortBy'],$criteria['sort'],$criteria['page']);
-
-        $offset = ($currentPage - 1) * self::PER_PAGE;
-
-        $total = ${$this->entityName.'Repository'}->count($criteria);
-        $entities = ${$this->entityName.'Repository'}->findBy($criteria,$orderBy,self::PER_PAGE,$offset);
+        $total = ${$this->entityName.'Repository'}->count($this->criteria);
+        $entities = ${$this->entityName.'Repository'}->findBy($this->criteria,$this->orderBy,self::PER_PAGE,$this->offset);
 
         return $this->renderForm($this->entityName.'/index.html.twig', [
             'entities' => [
                 'items'=>$entities,
                 'total' => $total,
                 'perPage' => self::PER_PAGE,
-                'offset' => $offset,
+                'offset' => $this->offset,
             ],
-            'form' => $form,
+            'form' => $this->filterForm,
         ]);
     }
 
